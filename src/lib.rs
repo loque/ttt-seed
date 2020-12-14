@@ -193,6 +193,7 @@ fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 
 fn view(model: &Model) -> Vec<Node<Msg>> {
     nodes![
+        header![h1!["Tic tac toe"]],
         section![C!["board"], view_board(&model.board, &model.state)],
         IF!( model.state.is_not("Ended") => view_turn(&model.turn)),
         IF!( model.state.is("Ended") => view_winner(&model.winner)),
@@ -201,7 +202,7 @@ fn view(model: &Model) -> Vec<Node<Msg>> {
 }
 
 fn view_turn(turn: &Player) -> Node<Msg> {
-    div![span!["Next: "], span![turn.to_text()]]
+    div![span!["Player "], i![turn.to_text()], span![" turn"]]
 }
 
 fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
@@ -237,7 +238,8 @@ fn view_winner(winner: &Option<Player>) -> Node<Msg> {
     let mut content = vec![];
 
     if winner.is_some() {
-        content.push(span![winner.unwrap().to_text().to_owned()]);
+        content.push(span!["Player "]);
+        content.push(i![winner.unwrap().to_text().to_owned()]);
         content.push(span![" won!"]);
     } else {
         content.push(span!["It's a tie!"]);
@@ -247,7 +249,32 @@ fn view_winner(winner: &Option<Player>) -> Node<Msg> {
 }
 
 fn view_reset() -> Node<Msg> {
-    button![C!["reset"], "Play again", ev(Ev::Click, |_| Msg::Reset)]
+    button![
+        C![
+            "bg-green-500",
+            "text-white",
+            "shadow-green-500",
+            "rounded-lg",
+            "py-1",
+            "px-3",
+            "text-lg",
+            // hover
+            "hover:bg-green-400",
+            "hover:shadow-green-400",
+            // focus
+            "focus:outline-none",
+            "focus:border-transparent",
+            // active
+            "active:bg-green-600",
+            "active:shadow-green-600",
+            // animation
+            "transition",
+            "duration-200",
+            "ease-in-out",
+        ],
+        "Play again",
+        ev(Ev::Click, |_| Msg::Reset)
+    ]
 }
 
 #[wasm_bindgen(start)]
