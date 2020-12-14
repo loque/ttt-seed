@@ -247,7 +247,7 @@ fn view_winner(winner: &Option<Player>) -> Node<Msg> {
 }
 
 fn view_reset() -> Node<Msg> {
-    button![C!["reset"], "Reset", ev(Ev::Click, |_| Msg::Reset)]
+    button![C!["reset"], "Play again", ev(Ev::Click, |_| Msg::Reset)]
 }
 
 #[wasm_bindgen(start)]
