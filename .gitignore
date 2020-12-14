@@ -3,3 +3,4 @@
 Cargo.lock
 .private
 /node_modules
+/main.css
