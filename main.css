@@ -1,3 +1,10 @@
+#app {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
 .board {
   display: flex;
   flex-direction: column;
@@ -13,4 +20,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+button {
+  color: black;
 }
