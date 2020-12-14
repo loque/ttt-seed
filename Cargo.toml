@@ -17,6 +17,10 @@ wasm-bindgen-test = "0.3.18"
 
 [dependencies]
 seed = "0.8.0"
+seed-icons = "0.4.2"
+
+[build-dependencies]
+seed-icons-gen = "0.3.2"
 
 [profile.release]
 lto = true
