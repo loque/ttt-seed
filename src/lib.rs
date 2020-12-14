@@ -192,21 +192,16 @@ fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 }
 
 fn view(model: &Model) -> Vec<Node<Msg>> {
-    vec![
+    nodes![
         section![C!["board"], view_board(&model.board, &model.state)],
-        view_turn(&model.state, &model.turn),
-        view_winner(&model.state, &model.winner),
-        view_reset(&model.state),
+        IF!( model.state.is_not("Ended") => view_turn(&model.turn)),
+        IF!( model.state.is("Ended") => view_winner(&model.winner)),
+        IF!( model.state.is("Ended") => view_reset()),
     ]
 }
 
-fn view_turn(state: &State, turn: &Player) -> Node<Msg> {
-    div![IF!(
-        state.is_not("Ended") => vec![
-            span!["Next: "],
-            span![turn.to_text()]
-        ]
-    )]
+fn view_turn(turn: &Player) -> Node<Msg> {
+    div![span!["Next: "], span![turn.to_text()]]
 }
 
 fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
@@ -238,27 +233,21 @@ fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
     board_content
 }
 
-fn view_winner(state: &State, winner: &Option<Player>) -> Node<Msg> {
+fn view_winner(winner: &Option<Player>) -> Node<Msg> {
     let mut content = vec![];
-    if state.is("Ended") {
-        if winner.is_some() {
-            content.push(span![winner.unwrap().to_text().to_owned()]);
-            content.push(span![" won!"]);
-        } else {
-            content.push(span!["It's a tie!"]);
-        }
+
+    if winner.is_some() {
+        content.push(span![winner.unwrap().to_text().to_owned()]);
+        content.push(span![" won!"]);
+    } else {
+        content.push(span!["It's a tie!"]);
     }
 
     div![content]
 }
 
-fn view_reset(state: &State) -> Node<Msg> {
-    div![IF!(
-    state.is("Ended") => button![
-        C!["reset"],
-        "Reset",
-        ev(Ev::Click, |_| Msg::Reset)
-    ])]
+fn view_reset() -> Node<Msg> {
+    button![C!["reset"], "Reset", ev(Ev::Click, |_| Msg::Reset)]
 }
 
 #[wasm_bindgen(start)]
