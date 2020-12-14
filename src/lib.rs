@@ -1,66 +1,267 @@
-// (Lines like the one below ignore selected Clippy rules
-//  - it's useful when you want to check your code with `cargo make verify`
-// but some rules are too "annoying" or are not applicable for your case.)
 #![allow(clippy::wildcard_imports)]
 
 use seed::{prelude::*, *};
+use std::fmt::{Debug, Formatter, Result as FmtResult};
 
-// ------ ------
-//     Init
-// ------ ------
-
-// `init` describes what should happen when your app started.
 fn init(_: Url, _: &mut impl Orders<Msg>) -> Model {
-    Model::default()
+    Model::new()
+}
+struct Model {
+    state: State,
+    turn: Player,
+    winner: Option<Player>,
+    board: Board,
 }
 
-// ------ ------
-//     Model
-// ------ ------
-
-// `Model` describes our app state.
-type Model = i32;
-
-// ------ ------
-//    Update
-// ------ ------
-
-// (Remove the line below once any of your `Msg` variants doesn't implement `Copy`.)
-#[derive(Copy, Clone)]
-// `Msg` describes the different events you can modify state with.
-enum Msg {
-    Increment,
-}
-
-// `update` describes how to handle each `Msg`.
-fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
-    match msg {
-        Msg::Increment => *model += 1,
+impl Model {
+    fn new() -> Self {
+        Model {
+            state: State::Idle,
+            turn: Player::X,
+            winner: None,
+            board: [[None; 3]; 3],
+        }
     }
 }
 
-// ------ ------
-//     View
-// ------ ------
+enum State {
+    Idle,
+    Playing,
+    Ended,
+}
 
-// (Remove the line below once your `Model` become more complex.)
-#[allow(clippy::trivially_copy_pass_by_ref)]
-// `view` describes what to display.
-fn view(model: &Model) -> Node<Msg> {
-    div![
-        "This is a counter: ",
-        C!["counter"],
-        button![model, ev(Ev::Click, |_| Msg::Increment),],
+impl State {
+    fn to_text(&self) -> &str {
+        match self {
+            State::Idle => "Idle",
+            State::Playing => "Playing",
+            State::Ended => "Ended",
+        }
+    }
+
+    fn is(&self, test: &str) -> bool {
+        self.to_text() == test
+    }
+
+    fn is_not(&self, test: &str) -> bool {
+        self.to_text() != test
+    }
+}
+
+impl Debug for State {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}", self.to_text())
+    }
+}
+
+type Board = [BoardRow; 3];
+type BoardRow = [Option<Player>; 3];
+
+#[derive(Copy, Clone, PartialEq)]
+enum Player {
+    X,
+    O,
+}
+
+impl Player {
+    fn to_text(&self) -> &str {
+        match self {
+            Self::X => "X",
+            Self::O => "O",
+        }
+    }
+}
+
+impl Debug for Player {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}", self.to_text())
+    }
+}
+
+enum Msg {
+    SelectPoint(Pos),
+    Reset,
+}
+
+struct Pos {
+    row_idx: usize,
+    col_idx: usize,
+}
+
+fn did_player_win(board: &Board, player: &Player) -> bool {
+    // check rows
+    for row in board {
+        let mut match_count = 0;
+        for point in row {
+            if let Some(point_player) = point {
+                if point_player == player {
+                    match_count = match_count + 1;
+                }
+            }
+        }
+        if match_count == 3 {
+            return true;
+        }
+    }
+
+    // check cols
+    for col_idx in 0..2 {
+        let mut match_count = 0;
+
+        for row in board {
+            let point = &row[col_idx];
+
+            if let Some(point_player) = point {
+                if point_player == player {
+                    match_count = match_count + 1;
+                }
+            }
+        }
+
+        if match_count == 3 {
+            return true;
+        }
+    }
+
+    // check diagonal starting at (0,0)
+    let mut match_count = 0;
+    for i in 0..3 {
+        if let Some(point_player) = &board[i][i] {
+            if point_player == player {
+                match_count = match_count + 1;
+            }
+        }
+    }
+
+    if match_count == 3 {
+        return true;
+    }
+
+    // check diagonal starting at (0,2)
+    let mut match_count = 0;
+    for i in 0..3 {
+        if let Some(point_player) = &board[i][2 - i] {
+            if point_player == player {
+                match_count = match_count + 1;
+            }
+        }
+    }
+
+    if match_count == 3 {
+        return true;
+    }
+
+    false
+}
+
+fn did_game_end(board: &Board) -> bool {
+    for row in board {
+        for point in row {
+            if point.is_none() {
+                return false;
+            }
+        }
+    }
+    true
+}
+
+fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
+    match msg {
+        Msg::SelectPoint(pos) => {
+            // update the board
+            model.board[pos.row_idx][pos.col_idx] = Some(model.turn);
+
+            if did_player_win(&model.board, &model.turn) {
+                model.winner = Some(model.turn);
+                model.state = State::Ended;
+            } else if did_game_end(&model.board) {
+                model.state = State::Ended;
+            } else {
+                match model.turn {
+                    Player::X => model.turn = Player::O,
+                    Player::O => model.turn = Player::X,
+                };
+
+                model.state = State::Playing;
+            }
+        }
+        Msg::Reset => {
+            *model = Model::new();
+        }
+    }
+}
+
+fn view(model: &Model) -> Vec<Node<Msg>> {
+    vec![
+        section![C!["board"], view_board(&model.board, &model.state)],
+        view_turn(&model.state, &model.turn),
+        view_winner(&model.state, &model.winner),
+        view_reset(&model.state),
     ]
 }
 
-// ------ ------
-//     Start
-// ------ ------
+fn view_turn(state: &State, turn: &Player) -> Node<Msg> {
+    div![IF!(
+        state.is_not("Ended") => vec![
+            span!["Next: "],
+            span![turn.to_text()]
+        ]
+    )]
+}
 
-// (This function is invoked by `init` function in `index.html`.)
+fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
+    let mut board_content: Vec<Node<Msg>> = vec![];
+    let state_is_not_ended = state.is_not("Ended");
+
+    for (row_idx, row) in board.iter().enumerate() {
+        let mut row_content: Vec<Node<Msg>> = vec![];
+
+        for (col_idx, point) in row.iter().enumerate() {
+            let point_content = match point {
+                Some(player) => player.to_text(),
+                None => "",
+            };
+
+            row_content.push(div![
+                C!["board-point"],
+                point_content,
+                ev(
+                    Ev::Click,
+                    move |_| IF!(state_is_not_ended => Msg::SelectPoint(Pos{ row_idx, col_idx }))
+                )
+            ])
+        }
+
+        board_content.push(div![C!["board-row"], row_content])
+    }
+
+    board_content
+}
+
+fn view_winner(state: &State, winner: &Option<Player>) -> Node<Msg> {
+    let mut content = vec![];
+    if state.is("Ended") {
+        if winner.is_some() {
+            content.push(span![winner.unwrap().to_text().to_owned()]);
+            content.push(span![" won!"]);
+        } else {
+            content.push(span!["It's a tie!"]);
+        }
+    }
+
+    div![content]
+}
+
+fn view_reset(state: &State) -> Node<Msg> {
+    div![IF!(
+    state.is("Ended") => button![
+        C!["reset"],
+        "Reset",
+        ev(Ev::Click, |_| Msg::Reset)
+    ])]
+}
+
 #[wasm_bindgen(start)]
 pub fn start() {
-    // Mount the `app` to the element with the `id` "app".
     App::start("app", init, update, view);
 }
