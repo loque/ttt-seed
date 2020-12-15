@@ -2,20 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.board {
-  display: flex;
-  flex-direction: column;
-}
-.board-row {
-  display: flex;
-  flex-direction: row;
-}
-.board-point {
-  width: 80px;
-  height: 80px;
-  border: 1px solid #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 40px;
+.text-shadow-black {
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }

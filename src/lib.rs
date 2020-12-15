@@ -1,6 +1,7 @@
 #![allow(clippy::wildcard_imports)]
 
 use seed::{prelude::*, *};
+use seed_icons::fa::solid::undo_alt;
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 fn init(_: Url, _: &mut impl Orders<Msg>) -> Model {
@@ -193,16 +194,29 @@ fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
 
 fn view(model: &Model) -> Vec<Node<Msg>> {
     nodes![
-        header![h1!["Tic tac toe"]],
-        section![C!["board"], view_board(&model.board, &model.state)],
+        header![h1![C!["text-shadow-black"], "Tic Tac Toe"]],
+        section![
+            C!["flex", "flex-col", "mb-8"],
+            view_board(&model.board, &model.state)
+        ],
         IF!( model.state.is_not("Ended") => view_turn(&model.turn)),
-        IF!( model.state.is("Ended") => view_winner(&model.winner)),
-        IF!( model.state.is("Ended") => view_reset()),
+        IF!( model.state.is("Ended") => div![
+            C!["flex", "flex-row", "items-center", "h-12"],
+            vec![
+                view_winner(&model.winner),
+                view_reset()
+            ]
+        ]),
     ]
 }
 
 fn view_turn(turn: &Player) -> Node<Msg> {
-    div![span!["Player "], i![turn.to_text()], span![" turn"]]
+    div![
+        C!["flex", "flex-row", "items-center", "h-12", "gap-1.5"],
+        span!["Player "],
+        i![turn.to_text()],
+        span![" turn"]
+    ]
 }
 
 fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
@@ -219,7 +233,17 @@ fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
             };
 
             row_content.push(div![
-                C!["board-point"],
+                C![
+                    "flex",
+                    "justify-center",
+                    "items-center",
+                    "w-40",
+                    "h-40",
+                    "text-9xl",
+                    "border",
+                    "border-solid",
+                    "border-black",
+                ],
                 point_content,
                 ev(
                     Ev::Click,
@@ -228,7 +252,7 @@ fn view_board(board: &Board, state: &State) -> Vec<Node<Msg>> {
             ])
         }
 
-        board_content.push(div![C!["board-row"], row_content])
+        board_content.push(div![C!["flex", "flex-row", "bg-white"], row_content])
     }
 
     board_content
@@ -245,7 +269,7 @@ fn view_winner(winner: &Option<Player>) -> Node<Msg> {
         content.push(span!["It's a tie!"]);
     }
 
-    div![content]
+    strong![C!["flex", "gap-1.5", "items-center"], content]
 }
 
 fn view_reset() -> Node<Msg> {
@@ -258,6 +282,9 @@ fn view_reset() -> Node<Msg> {
             "py-1",
             "px-3",
             "text-lg",
+            "ml-8",
+            "w-12",
+            "h-12",
             // hover
             "hover:bg-green-400",
             "hover:shadow-green-400",
@@ -272,7 +299,7 @@ fn view_reset() -> Node<Msg> {
             "duration-200",
             "ease-in-out",
         ],
-        "Play again",
+        undo_alt::i(),
         ev(Ev::Click, |_| Msg::Reset)
     ]
 }
